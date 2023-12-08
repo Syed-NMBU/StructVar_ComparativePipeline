@@ -20,7 +20,7 @@ MERGED_VCF="/path/to/your/output_directory/merged_vcf_file.vcf"  # Replace with 
 
 # SURVIVOR parameters
 MIN_SUPPORT="1"  # Minimum number of supporting VCF files for a variant to be included in the merge
-DISTANCE_BETWEEN_BREAKPOINTS="1000"  # Max distance between breakpoints
+DISTANCE_BETWEEN_BREAKPOINTS="100"  # Max distance between breakpoints
 MIN_SV_SIZE="50"  # Minimum size of SVs to be taken into account
 
 # Create a file list of VCF files to merge
