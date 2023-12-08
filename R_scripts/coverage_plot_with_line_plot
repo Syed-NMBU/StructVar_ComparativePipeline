@@ -1,0 +1,60 @@
+# R script for Visualizing Mosdepth Coverage Data
+# This script generates a multi-panel plot, each panel displaying coverage depth across chromosomes for a subset of samples.
+# It assumes that 'coverage_data' is a preloaded dataframe containing 'Sample', 'Chromosome', and 'AverageDepth' columns.
+# Users should customize the 'samples' variable and file paths as per their dataset.
+
+# Load necessary libraries
+library(ggplot2)  # For creating the plot
+library(dplyr)    # For data manipulation
+library(viridis)  # For color scales
+library(ggrepel)  # For repelling overlapping text labels
+library(patchwork)  # For combining plots
+
+# Initialize a list to store the ggplot objects
+plot_list <- list()
+
+# Get a list of unique sample names for visualization
+# Users should update the index range [11:20] to match their specific sample IDs
+samples <- unique(coverage_data$Sample)[11:20]
+
+# Create plots for each sample in the subset
+for (sample in samples) {
+  # Filter the coverage data for the current sample
+  sample_data <- coverage_data %>% filter(Sample == sample)
+  
+  # Identify the chromosomes with the max, second max, and min average coverage depth
+  max_chrom <- sample_data %>% arrange(desc(AverageDepth)) %>% slice(1)
+  second_max_chrom <- sample_data %>% arrange(desc(AverageDepth)) %>% slice(2)
+  min_chrom <- sample_data %>% arrange(AverageDepth) %>% slice(1)
+  
+  # Combine these rows into a single dataframe for labeling on the plot
+  labeled_points <- rbind(max_chrom, second_max_chrom, min_chrom)
+  
+  # Create the plot for the current sample
+  p <- ggplot(sample_data, aes(x = Chromosome, y = AverageDepth, group = 1)) +
+    geom_line(aes(color = Sample), size = 1) +
+    geom_point(data = labeled_points, aes(x = Chromosome, y = AverageDepth), color = "red", size = 3) +
+    geom_label_repel(data = labeled_points,
+                     aes(label = sprintf("%.2f (%s)", AverageDepth, Chromosome)),
+                     size = 3, nudge_y = 1, show.legend = FALSE, max.overlaps = Inf) +
+    scale_color_viridis_d(begin = 0.2, end = 0.8) +
+    theme_minimal(base_size = 15) +
+    labs(title = sample, x = NULL, y = "Avg Coverage Depth") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+          plot.title = element_text(size = 16),
+          legend.position = "none")
+  plot_list[[sample]] <- p
+}
+
+# Combine and save the plots into one image
+p_combined <- wrap_plots(plot_list, ncol = 5) +
+  plot_annotation(title = "Average Coverage Depth Across Chromosomes",
+                  subtitle = "Highlighting Maximum, Second Maximum, and Minimum Coverage Depth for Samples 11 to 20",
+                  theme = theme(plot.title = element_text(size = 20),
+                                plot.subtitle = element_text(size = 14)))
+
+# Users should update the file path for saving the plot image
+ggsave("/path/to/your/output_directory/annotated_coverage_depth_plot.png", p_combined, width = 20, height = 15)
+
+# Print the combined plot to the console
+print(p_combined)
