@@ -1,0 +1,40 @@
+# Sample-Based Coverage Depth Visualization Script
+# This script creates a bar plot visualizing the average coverage depth for a subset of samples from the coverage data.
+
+# Load necessary libraries
+library(ggplot2)  # For creating plots
+library(dplyr)    # For data manipulation
+library(viridis)  # For a color scale that is perceptually uniform
+library(ggrepel)  # For adding non-overlapping text labels to the plot
+
+# Aggregate data to find the average coverage depth for each sample
+# The 'coverage_data' dataframe should be preloaded with 'Sample' and 'AverageDepth' columns
+sample_avg <- coverage_data %>%
+  group_by(Sample) %>%
+  summarise(AvgCoverageDepth = mean(AverageDepth)) %>%  # Calculate the mean average depth
+  ungroup() %>%
+  filter(Sample %in% unique(coverage_data$Sample)[1:30])  # Select the first 30 samples
+
+# Create the bar plot
+# Mapping the sample names to the x-axis and the average coverage depth to the y-axis
+p <- ggplot(sample_avg, aes(x = Sample, y = AvgCoverageDepth)) +
+  geom_bar(stat = "identity", fill = viridis(1)) +  # Bars with colors from the viridis palette
+  geom_text_repel(aes(label = sprintf("%.2f", AvgCoverageDepth)),  # Add labels to the bars
+                  nudge_y = 1,  # Adjust the position of the text labels slightly above the bars
+                  size = 3, 
+                  angle = 45,
+                  max.overlaps = Inf) +  # Ensure text labels do not overlap
+  theme_minimal(base_size = 15) +  # Use a minimal theme for the plot
+  labs(title = "Sample-wise Average Coverage Depth",  # Add labels and title to the plot
+       x = "Sample",
+       y = "Average Coverage Depth") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),  # Adjust the theme
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 14))
+
+# Save the plot to a file
+# Users should update the file path to where they want the plot image to be saved
+ggsave("/path/to/output/sample_wise_avg_coverage_depth_plot.png", p, width = 15, height = 7)
+
+# Print the plot to the R console
+print(p)
