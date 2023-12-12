@@ -1,0 +1,41 @@
+#!/usr/bin/env Rscript
+
+# This script creates a grouped bar plot of structural variant (SV) counts obtained from tools like Delly, Manta, and Smoove.
+# It visualizes the count of different SV types (BND, DEL, DUP, INS, INV) for a range of samples.
+# Before running this script, replace the sample data with your actual SV count data.
+# The script assumes that the ggplot2 and reshape2 packages are installed in your R environment.
+
+# Load the required libraries
+library(ggplot2)
+library(reshape2)
+
+# Define a data frame with SV counts for each sample
+# Replace the example SV counts with actual counts from your analysis
+sv_data <- data.frame(
+  Sample = 1:30,  # Sample identifiers; adjust the range as per your actual sample numbers
+  BND = c(...),   # BND SV counts; replace '...' with actual counts
+  DEL = c(...),   # DEL SV counts; replace '...' with actual counts
+  DUP = c(...),   # DUP SV counts; replace '...' with actual counts
+  INS = c(...),   # INS SV counts; replace '...' with actual counts
+  INV = c(...)    # INV SV counts; replace '...' with actual counts
+)
+
+# Transform the data to a long format suitable for ggplot2
+sv_data_long <- melt(sv_data, id.vars = "Sample", variable.name = "SVType", value.name = "Count")
+
+# Create a grouped bar plot with SV counts for each SV type and sample
+sv_plot <- ggplot(sv_data_long, aes(x = factor(Sample), y = Count, fill = SVType)) +
+  geom_bar(stat = "identity", position = position_dodge()) +  # Create grouped bars
+  scale_fill_brewer(palette = "Set1") +  # Use a color palette for different SV types
+  theme_minimal() +  # Apply a minimal theme
+  labs(x = "Sample", y = "Count", title = "SV Counts per Sample",
+       subtitle = "Grouped by SV Type (Delly/Manta/Smoove)") +
+  theme(legend.position = "bottom") +  # Position the legend at the bottom
+  coord_flip()  # Flip the plot to horizontal
+
+# Display the plot
+print(sv_plot)
+
+# Optionally, save the plot to a file
+# Replace 'your_plot_filename.png' with the desired file name and path
+ggsave("your_plot_filename.png", sv_plot, width = 12, height = 8)
