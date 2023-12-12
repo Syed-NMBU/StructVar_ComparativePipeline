@@ -1,0 +1,62 @@
+# Ensure BCFtools is installed and in your PATH.
+# Replace "merged_final.vcf" with the path to your VCF file.
+
+# Extract variants supported by all three tools (Delly, Manta, Smoove)
+bcftools query -f '%CHROM\t%SVTYPE\n' -i 'SUPP_VEC="111"' merged_final.vcf | sort | uniq -c > supp_vec_111_svtype_chrom_distribution.txt
+
+# The output file supp_vec_111_svtype_chrom_distribution.txt will contain the count of variants by chromosome and type.
+# This R script reads the variant data extracted with BCFtools and generates a grouped bar plot.
+
+# Install and load required packages
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2")
+}
+if (!requireNamespace("reshape2", quietly = TRUE)) {
+  install.packages("reshape2")
+}
+library(ggplot2)
+library(reshape2)
+
+# Define the path to the extracted data
+# Replace this with the actual path to your data file
+data_file <- "path/to/your/supp_vec_111_svtype_chrom_distribution.txt"
+
+# Read the data into R
+data <- read.table(data_file, header = FALSE, col.names = c("Count", "Chrom", "SVType"))
+
+# Create a combined data frame for all chromosomes
+# Replace the following vectors with your actual data
+Sample <- paste("sal", sprintf("%02d", 1:39), sep="")
+DEL <- c(...) # Add your DEL counts
+DUP <- c(...) # Add your DUP counts
+INV <- c(...) # Add your INV counts
+TRA <- c(...) # Add your TRA counts
+
+# Combine data into a single data frame
+sv_data <- data.frame(Sample, DEL, DUP, INV, TRA)
+
+# Melt the data to long format for ggplot
+sv_data_long <- melt(sv_data, id.vars = "Sample", variable.name = "SVType", value.name = "Count")
+
+# Handle any NA values that may cause issues in plotting
+sv_data_long$Count[is.na(sv_data_long$Count)] <- 0
+
+# Create the grouped bar plot
+sv_plot <- ggplot(sv_data_long, aes(x = factor(Sample), y = Count, fill = SVType)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal() +
+  labs(x = "Sample", y = "Count", title = "SV Counts per Chromosome by Merging Three Tools Output", subtitle = "Each SV type represented by different colors") +
+  theme(legend.position = "bottom") +
+  coord_flip()
+
+# Save the plot to a file
+output_plot_path <- "path/to/your/output/SV_counts_plot.png"
+ggsave(output_plot_path, sv_plot, width = 12, height = 8)
+
+# Display the plot in R
+print(sv_plot)
+
+# End of the R script
+
