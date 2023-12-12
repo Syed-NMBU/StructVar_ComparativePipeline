@@ -1,0 +1,55 @@
+#!/usr/bin/env Rscript
+
+# This script generates a Venn diagram to visualize the overlap of structural variants (SVs)
+# detected by DELLY, Manta, and Smoove. It reads from text files that contain lists of SVs
+# identified by each tool and their combinations.
+
+# Required libraries
+if (!requireNamespace("ggVennDiagram", quietly = TRUE)) {
+  install.packages("ggVennDiagram")
+}
+library(ggVennDiagram)
+library(ggplot2)
+
+# Define file paths for each set of SVs
+# Update the paths to the location of your TXT files
+delly_only_path <- "path/to/Delly_only.txt"
+delly_manta_path <- "path/to/Delly_Manta.txt"
+delly_smoove_path <- "path/to/Delly_Smoove.txt"
+manta_only_path <- "path/to/Manta_only.txt"
+manta_smoove_path <- "path/to/Manta_Smoove.txt"
+smoove_only_path <- "path/to/Smoove_only.txt"
+all_three_path <- "path/to/All_three_tools.txt"
+
+# Read the data from text files
+delly_only <- readLines(delly_only_path)
+delly_manta <- readLines(delly_manta_path)
+delly_smoove <- readLines(delly_smoove_path)
+manta_only <- readLines(manta_only_path)
+manta_smoove <- readLines(manta_smoove_path)
+smoove_only <- readLines(smoove_only_path)
+all_three <- readLines(all_three_path)
+
+# Extract unique identifiers for SVs detected by each tool and their combinations
+delly_ids <- unique(c(delly_only, delly_manta, delly_smoove, all_three))
+manta_ids <- unique(c(manta_only, delly_manta, manta_smoove, all_three))
+smoove_ids <- unique(c(smoove_only, delly_smoove, manta_smoove, all_three))
+
+# Create a list of sets for the Venn diagram
+sv_sets <- list(
+  Delly = delly_ids,
+  Manta = manta_ids,
+  Smoove = smoove_ids
+)
+
+# Create the Venn diagram with a title
+venn_plot <- ggVennDiagram(sv_sets) +
+  labs(title = "Overlap of SVs Detected by DELLY, Manta, and Smoove")
+
+# Display the Venn diagram
+print(venn_plot)
+
+# Save the Venn diagram to a file
+# Update the file name and path as needed
+output_file <- "path/to/your/output/venn_diagram_sv_detection.png"
+ggsave(output_file, plot = venn_plot, width = 8, height = 8)
