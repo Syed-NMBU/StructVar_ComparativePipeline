@@ -1,0 +1,79 @@
+#!/usr/bin/env Rscript
+
+# This script creates a grouped bar plot visualizing structural variant (SV) counts
+# and mean coverage from CSV data obtained from Delly, Manta, and Smoove for per chromosome per sample.
+# The script is generalized to work with any of the three tools output at once and assumes a CSV file input with specific columns:
+# Sample, Chrom, Length, Mean, SV_Counts.
+
+# Required libraries
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(RColorBrewer)
+
+# Define the path to the input CSV file. Update this path to the location of your CSV file.
+input_csv_path <- "path/to/your/sample_01_sv_data.csv" # Update this to your CSV file path
+
+# Load the data from the CSV file
+data <- read.csv(input_csv_path)
+
+# Prepare data by converting chromosome length to Mb and assigning colors based on size
+data <- data %>%
+  mutate(
+    Chrom_Factor = factor(Chrom, levels = unique(Chrom)), # Chromosome as a factor for plotting
+    Size_Mb = Length / 1e6, # Length in megabases
+    Size_Color = cut(Size_Mb, breaks = 5, labels = brewer.pal(5, "Spectral")) # Colors assigned based on size
+  )
+
+# Define a scaling factor for mean coverage to align with the number of SVs on the plot
+# Adjust as necessary to fit the data scale for your dataset
+scale_factor <- 500
+
+# Create the main plot with SV counts and mean coverage by chromosome
+main_plot <- ggplot(data, aes(x = Chrom_Factor)) +
+  geom_bar(aes(y = SV_Counts, fill = Size_Color), stat = 'identity') +
+  geom_line(aes(y = Mean * scale_factor, group = Sample), color = 'darkred', size = 1) +
+  scale_y_continuous(
+    name = "Number of SVs",
+    sec.axis = sec_axis(~ . / scale_factor, name = "Coverage")
+  ) +
+  scale_fill_manual(values = brewer.pal(5, "Spectral")) +
+  labs(title = "Number of SVs Detected vs Coverage", x = '') +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# Create a summary annotation panel for chromosome sizes
+chrom_sizes <- unique(data[, c("Chrom", "Size_Mb", "Size_Color")])
+
+# Annotation plot for chromosome sizes
+size_annotation <- ggplot(chrom_sizes, aes(x = Chrom, y = Size_Mb, fill = Size_Color)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = brewer.pal(5, "Spectral")) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(angle = 90, vjust = 0.5, size = 8), # Rotated labels
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    plot.margin = margin(b = 10) # Adjust bottom margin
+  ) +
+  labs(x = "", y = "Size (Mb)", title = "Chromosome Sizes")
+
+# Combine the main plot and the size annotation panel
+combined_plot <- grid.arrange(main_plot, size_annotation, nrow = 2, heights = c(4, 1))
+
+# Convert the combined plot to a grob (graphical object) for saving
+library(grid)
+g <- arrangeGrob(combined_plot)
+
+# Save the plot to a file
+# Specify the output file path and name
+output_plot_path <- "path/to/your/output/SV_plot_sample_01.png" # Update this to your desired path
+ggsave(output_plot_path, plot = g, width = 10, height = 6, dpi = 300)
+
+# Print a message to the console indicating the plot was saved
+message("Plot saved to ", output_plot_path)
