@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Generalized script for merging VCF files from Smoove.
+# This script finds all VCF files following a given naming pattern from directory,
+# merges them into a single VCF , and then indexes the merged file.
+
+# Define the output filenames for the merged VCFs
+merged_smoove_output="merged_smoove_output.vcf.gz"
+
+# Define the directory containing Smoove files
+# Users should update these paths to point to their actual directory
+smoove_vcf_dir="/path/to/smoove/vcf_files"
+
+# Check for the presence of BCFtools and Tabix
+if ! command -v bcftools &> /dev/null || ! command -v tabix &> /dev/null; then
+    echo "BCFtools and Tabix are required but not found. Please install them to proceed."
+    exit 1
+fi
+
+# Merge Smoove VCF files
+echo "Merging Smoove VCF files..."
+smoove_files=$(find $smoove_vcf_dir -name "smoove.genotyped.norm.vcf.gz")
+bcftools merge -O z -o "$merged_smoove_output" $smoove_files && tabix -p vcf "$merged_smoove_output"
+
+if [[ $? -eq 0 ]]; then
+    echo "Smoove VCF files merged successfully."
+else
+    echo "Error occurred during Smoove VCF merging."
+    exit 1
+fi
+
+echo "Merging of VCF files is complete."
