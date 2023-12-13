@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Generalized script for merging VCF files from Manta.
+# This script finds all VCF files following a given naming pattern from directory,
+# merges them into a single VCF , and then indexes the merged file.
+# Define the directory containing Manta VCF files
+# Users should update these paths to point to the actual directory
+manta_vcf_dir="/path/to/manta/vcf_files"
+
+# Merge Manta VCF files
+echo "Merging Manta VCF files..."
+manta_files=$(find $manta_vcf_dir -name "diploidSV.vcf.gz" -exec echo {} \;)
+bcftools merge -O z -o "$merged_manta_output" $manta_files && tabix -p vcf "$merged_manta_output"
+
+if [[ $? -eq 0 ]]; then
+    echo "Manta VCF files merged successfully."
+else
+    echo "Error occurred during Manta VCF merging."
+    exit 1
+fi
+
+echo "Merging of VCF files is complete."
